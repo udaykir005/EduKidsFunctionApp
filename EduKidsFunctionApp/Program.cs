@@ -1,13 +1,22 @@
+using EduKidsFunctionApp.Models;
 using Microsoft.Azure.Functions.Worker.Builder;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.EntityFrameworkCore;
 
 var builder = FunctionsApplication.CreateBuilder(args);
 
 builder.ConfigureFunctionsWebApplication();
 
-// Application Insights isn't enabled by default. See https://aka.ms/AAt8mw4.
-// builder.Services
-//     .AddApplicationInsightsTelemetryWorkerService()
-//     .ConfigureFunctionsApplicationInsights();
+var host = new HostBuilder()
+    .ConfigureFunctionsWorkerDefaults()
+    .ConfigureServices(services =>
+    {
+        string connectionString = Environment.GetEnvironmentVariable("SqlConnectionString:EduDb");
 
-builder.Build().Run();
+        services.AddDbContext<AppDbContext>(options =>
+            options.UseSqlServer(connectionString));
+    })
+    .Build();
+
+host.Run();

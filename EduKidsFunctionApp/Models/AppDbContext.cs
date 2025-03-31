@@ -17,22 +17,11 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<CustomerContact> CustomerContacts { get; set; }
 
+    public virtual DbSet<WordsBank> WordsBanks { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings:EduDb");
-
-            if (string.IsNullOrEmpty(connectionString))
-            {
-                throw new InvalidOperationException("Database connection string is not configured.");
-            }
-
-            optionsBuilder.UseSqlServer("SqlConnectionString:EduDb");
-        }
-    }
-//#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//        => optionsBuilder.UseSqlServer("SqlConnectionString:EduDb");
+#warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
+        => optionsBuilder.UseSqlServer("Server=tcp:edukids.database.windows.net;Database=edukidsdb;User Id=edukidsadmin;Password=p2GM8hMcz]4;");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -52,6 +41,21 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.MotherName).HasMaxLength(100);
             entity.Property(e => e.Phone).HasMaxLength(15);
             entity.Property(e => e.UserName).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<WordsBank>(entity =>
+        {
+            entity.HasKey(e => e.WordId).HasName("PK__wordsBan__2C20F066279AC9B4");
+
+            entity.ToTable("wordsBank", "Master");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.ExampleUsage).HasMaxLength(100);
+            entity.Property(e => e.Grammar).HasMaxLength(100);
+            entity.Property(e => e.Meaning).HasMaxLength(100);
+            entity.Property(e => e.Word).HasMaxLength(100);
         });
 
         OnModelCreatingPartial(modelBuilder);

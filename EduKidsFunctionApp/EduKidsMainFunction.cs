@@ -30,9 +30,10 @@ namespace EduKidsFunctionApp
         {
             _logger.LogInformation("Fetching user contacts from the database.");
 
-            var userContacts = await Task.Run(() => _dbContext.CustomerContacts.ToList());
+            var customerContacts = await Task.Run(() => _dbContext.CustomerContacts.ToList());
+            var wordsBank = await Task.Run(() => _dbContext.WordsBanks.ToList());
 
-            return new OkObjectResult(userContacts);
+            return new OkObjectResult(wordsBank);
         }
     }
 }

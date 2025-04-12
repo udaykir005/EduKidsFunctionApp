@@ -40,6 +40,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.FatherName).HasMaxLength(100);
             entity.Property(e => e.MotherName).HasMaxLength(100);
             entity.Property(e => e.Phone).HasMaxLength(15);
+            entity.Property(e => e.Subscribed).HasColumnName("subscribed");
             entity.Property(e => e.UserName).HasMaxLength(100);
         });
 
@@ -52,9 +53,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
-            entity.Property(e => e.ExampleUsage).HasMaxLength(100);
+            entity.Property(e => e.ExampleUsage).HasMaxLength(256);
             entity.Property(e => e.Grammar).HasMaxLength(100);
-            entity.Property(e => e.Meaning).HasMaxLength(100);
+            entity.Property(e => e.Meaning).HasMaxLength(256);
             entity.Property(e => e.Word).HasMaxLength(100);
         });
 

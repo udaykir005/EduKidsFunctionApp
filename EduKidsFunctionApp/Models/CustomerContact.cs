@@ -15,9 +15,13 @@ public partial class CustomerContact
 
     public DateOnly? DateOfBirth { get; set; }
 
-    public string Email { get; set; } = null!;
+    public string? Email { get; set; }
 
     public string? Phone { get; set; }
 
     public DateTime? CreatedAt { get; set; }
+
+    public int RegistrationStep { get; set; }
+
+    public bool Subscribed { get; set; }
 }

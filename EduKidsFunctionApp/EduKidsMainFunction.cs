@@ -10,6 +10,8 @@ using System.Threading.Tasks;
 using Twilio;
 using Twilio.Rest.Api.V2010.Account;
 using System.Collections.Generic;
+using Microsoft.Azure.WebJobs;
+using Twilio.TwiML;
 
 
 namespace EduKidsFunctionApp
@@ -18,12 +20,17 @@ namespace EduKidsFunctionApp
     {
         private readonly ILogger<EduKidsMainFunction> _logger;
         private readonly AppDbContext _dbContext;
+        // Initialize Twilio
+        string? accountSid = Environment.GetEnvironmentVariable("TwilioAccountSid");
+        string? authToken = Environment.GetEnvironmentVariable("TwilioAuthToken");
+        string? twilioNumber = Environment.GetEnvironmentVariable("TwilioWhatsAppNumber");
+        string? contentSid = Environment.GetEnvironmentVariable("TwilioContentSid_edukids_words_q1");
+        string? getConsentcontentSid = Environment.GetEnvironmentVariable("TwilioContentSid_getconsent");
 
         public EduKidsMainFunction(ILogger<EduKidsMainFunction> logger, AppDbContext dbContext)
         {
             _logger = logger;
             _dbContext = dbContext;
-
 
         }
 
@@ -31,27 +38,18 @@ namespace EduKidsFunctionApp
         public async Task<String> Run(
         [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
-            //_logger.LogInformation("Fetching user contacts from the database.");
-
-            //var customerContacts = await Task.Run(() => _dbContext.CustomerContacts.ToList());
-            //var wordsBank = await Task.Run(() => _dbContext.WordsBanks.ToList());
-
-            //return new OkObjectResult(wordsBank);
             _logger.LogInformation($"Function triggered at: {DateTime.UtcNow}");
-
+            string jsonContentVariables="Success2";
             try
             {
-                // Initialize Twilio
-                string? accountSid = Environment.GetEnvironmentVariable("TwilioAccountSid");
-                string? authToken = Environment.GetEnvironmentVariable("TwilioAuthToken");
-                string? twilioNumber = Environment.GetEnvironmentVariable("TwilioWhatsAppNumber");
-                string? contentSid = Environment.GetEnvironmentVariable("TwilioContentSid_1");
 
                 TwilioClient.Init(accountSid, authToken);
 
                 // Fetch phone numbers from DB
-                var contacts = await _dbContext.CustomerContacts.ToListAsync();
-
+                var contacts = await _dbContext.CustomerContacts
+                                               // .Where(c => c.ContactId == 1)
+                                               .ToListAsync();
+                //return contacts.Count.ToString();
                 // Fetch 3 random words from DB
                 var words = await _dbContext.WordsBanks
                     .OrderBy(r => Guid.NewGuid())  // Random order
@@ -95,8 +93,9 @@ namespace EduKidsFunctionApp
 
 
                     };
-                    string jsonContentVariables = System.Text.Json.JsonSerializer.Serialize(contentVariables).Replace("_","");
+                     jsonContentVariables = System.Text.Json.JsonSerializer.Serialize(contentVariables).Replace("_","");
 
+                    _logger.LogInformation($"jsonContentVariables!:{jsonContentVariables}");
 
                     tasks.Add(MessageResource.CreateAsync(
                         contentSid: contentSid,
@@ -106,31 +105,8 @@ namespace EduKidsFunctionApp
                     ));
                 }
 
-                /*
-                         const contentVariables = JSON.stringify({
-            "1": contact.name,
-
-            "2": formattedDate, //contact.name,
-            
-          //  "3": `*${word1.word}*`,
-            "3": `*${word1.word.charAt(0).toUpperCase() + word1.word.slice(1).toLowerCase()}*`,
-            "4": `  _${word1.PartofSpeech}_`,
-            "5": word1.meaning,
-            "6": word1Example,
-
-            "7": `*${word2.word.charAt(0).toUpperCase() + word2.word.slice(1).toLowerCase()}*`,
-            "8": `  _${word2.PartofSpeech}_`,
-            "9": word2.meaning,
-            "10": word2Example,
-            
-
-            "11":`*${word3.word.charAt(0).toUpperCase() + word3.word.slice(1).toLowerCase()}*`,
-            "12": `  _${word3.PartofSpeech}_`,
-            "13": word3.meaning,
-            "14": word3Example,
-            
-        });
-                */
+               
+                
                 await Task.WhenAll(tasks);
                 _logger.LogInformation("WhatsApp messages sent successfully!");
             }
@@ -138,9 +114,174 @@ namespace EduKidsFunctionApp
             {
                 _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
             }
-            return "Success";
+            return jsonContentVariables;
 
         }
+
+
+        [Function("GetUserContinuationConsent")]
+        public async Task<String> UserContinuationConsent(
+        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+        {
+            _logger.LogInformation($"Function triggered at: {DateTime.UtcNow}");
+            string jsonContentVariables = "Success2";
+            try
+            {
+             
+                TwilioClient.Init(accountSid, authToken);
+
+                // Fetch phone numbers from DB
+                var contacts = await _dbContext.CustomerContacts
+                                              //  .Where(c => c.ContactId == 1)
+                                               .ToListAsync();
+                //return contacts.Count.ToString();
+               
+
+        
+
+                // Prepare messages
+                var tasks = new List<Task<MessageResource>>();
+
+                foreach (var contact in contacts)
+                {
+
+
+                    
+                    tasks.Add(MessageResource.CreateAsync(
+                        contentSid: getConsentcontentSid,
+                        from: new Twilio.Types.PhoneNumber($"whatsapp:{twilioNumber}"),
+                        to: new Twilio.Types.PhoneNumber($"whatsapp:{contact.Phone}")
+                        
+                    ));
+                }
+
+
+
+                await Task.WhenAll(tasks);
+                _logger.LogInformation("WhatsApp messages sent successfully!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
+            }
+            return jsonContentVariables;
+
+        }
+
+
+        [Function("ReceiveWhatsAppMessage")]
+        public async Task<IActionResult> NewUserOnboarding(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req, ILogger log)
+        {
+            log.LogInformation("WhatsApp message received");
+            var formData = await req.ReadFormAsync();
+            string fromNumber = "33"; // formData["From"];
+            string messageBody = "tset";//formData["Body"]?.ToLower().Trim();
+
+            /***/
+
+            try
+            {
+
+                TwilioClient.Init(accountSid, authToken);
+
+                // Fetch phone numbers from DB
+                var contacts = await _dbContext.CustomerContacts
+                                                .Where(c => c.ContactId == 1)
+                                               .ToListAsync();
+                //return contacts.Count.ToString();
+
+
+
+
+                // Prepare messages
+                var tasks = new List<Task<MessageResource>>();
+
+                foreach (var contact in contacts)
+                {
+
+
+
+                    tasks.Add(MessageResource.CreateAsync(
+                        contentSid: getConsentcontentSid,
+                        from: new Twilio.Types.PhoneNumber($"whatsapp:{twilioNumber}"),
+                        to: new Twilio.Types.PhoneNumber($"whatsapp:{contact.Phone}")
+
+                    ));
+                }
+
+
+
+                await Task.WhenAll(tasks);
+                _logger.LogInformation("WhatsApp messages sent successfully!");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
+            }
+
+
+
+            /***/
+            var user = await _dbContext.CustomerContacts.FirstOrDefaultAsync(u => u.Phone == fromNumber);
+
+            if (user == null)
+            {
+                user = new CustomerContact { Phone = fromNumber, RegistrationStep = 1 };
+                _dbContext.CustomerContacts.Add(user);
+                await _dbContext.SaveChangesAsync();
+                return TwilioResponse("Welcome to EduKids! What's your child's name?");
+            }
+
+            return await HandleUserResponse(user, messageBody);
+        }
+
+        private async Task<IActionResult> HandleUserResponse(CustomerContact user, string message)
+        {
+            string reply = "test";
+
+            switch (user.RegistrationStep)
+            {
+                case 1:
+                    user.UserName = message;
+                    user.RegistrationStep = 2;
+                    reply = "Great! How old is your child?";
+                    break;
+
+                case 2:
+                    //  user.DateOfBirth = message;
+                    user.RegistrationStep = 3;
+                    reply = "Got it! What's your name as the parent?";
+                    break;
+
+                case 3:
+                    user.FatherName = message;
+                    user.RegistrationStep = 4;
+                    user.Subscribed = true;
+                    reply = "Thanks! You're now subscribed to EduKids daily learning messages.";
+                    break;
+
+                default:
+                    reply = "You're already subscribed! Stay tuned for daily words.";
+                    break;
+            }
+
+            await _dbContext.SaveChangesAsync();
+            return TwilioResponse(reply);
+        }
+
+        private static IActionResult TwilioResponse(string message)
+        {
+            var messagingResponse = new MessagingResponse();
+            messagingResponse.Message(message);
+            return new ContentResult
+            {
+                Content = messagingResponse.ToString(),
+                ContentType = "application/xml",
+                StatusCode = 200
+            };
+        }
+
     }
     
 }

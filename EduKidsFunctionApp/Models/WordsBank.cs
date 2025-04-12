@@ -9,11 +9,11 @@ public partial class WordsBank
 
     public string Word { get; set; } = null!;
 
-    public string Meaning { get; set; } = null!;
+    public string? Meaning { get; set; }
 
     public string Grammar { get; set; } = null!;
 
-    public string ExampleUsage { get; set; } = null!;
+    public string? ExampleUsage { get; set; }
 
     public int? DifficultLevel { get; set; }
 

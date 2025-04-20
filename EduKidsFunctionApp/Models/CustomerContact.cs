@@ -7,7 +7,7 @@ public partial class CustomerContact
 {
     public int ContactId { get; set; }
 
-    public string UserName { get; set; } = null!;
+    public string? UserName { get; set; }
 
     public string? MotherName { get; set; }
 

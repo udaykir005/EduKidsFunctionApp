@@ -12,12 +12,16 @@ using Twilio.Rest.Api.V2010.Account;
 using System.Collections.Generic;
 using Microsoft.Azure.WebJobs;
 using Twilio.TwiML;
-
+using Microsoft.Azure.Functions.Worker.Http;
+using System.Net;
+using System.Web;
+using Twilio.TwiML.Messaging;
+//using Twilio.TwiML.Voice;
 
 namespace EduKidsFunctionApp
 {
     public class EduKidsMainFunction
-    {
+    { 
         private readonly ILogger<EduKidsMainFunction> _logger;
         private readonly AppDbContext _dbContext;
         // Initialize Twilio
@@ -31,6 +35,8 @@ namespace EduKidsFunctionApp
         {
             _logger = logger;
             _dbContext = dbContext;
+            TwilioClient.Init(accountSid, authToken);
+
 
         }
 
@@ -43,11 +49,10 @@ namespace EduKidsFunctionApp
             try
             {
 
-                TwilioClient.Init(accountSid, authToken);
 
                 // Fetch phone numbers from DB
                 var contacts = await _dbContext.CustomerContacts
-                                               // .Where(c => c.ContactId == 1)
+                                                .Where(c => c.Subscribed == true)
                                                .ToListAsync();
                 //return contacts.Count.ToString();
                 // Fetch 3 random words from DB
@@ -170,59 +175,24 @@ namespace EduKidsFunctionApp
 
 
         [Function("ReceiveWhatsAppMessage")]
-        public async Task<IActionResult> NewUserOnboarding(
-        [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req, ILogger log)
+        public async Task<string> NewUserOnboarding(
+        [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequestData req, FunctionContext executionContext)
         {
-            log.LogInformation("WhatsApp message received");
-            var formData = await req.ReadFormAsync();
-            string fromNumber = "33"; // formData["From"];
-            string messageBody = "tset";//formData["Body"]?.ToLower().Trim();
-
-            /***/
-
-            try
-            {
-
-                TwilioClient.Init(accountSid, authToken);
-
-                // Fetch phone numbers from DB
-                var contacts = await _dbContext.CustomerContacts
-                                                .Where(c => c.ContactId == 1)
-                                               .ToListAsync();
-                //return contacts.Count.ToString();
+            _logger.LogInformation("WhatsApp message received");
 
 
+            var content = await new StreamReader(req.Body).ReadToEndAsync();
 
+            var parsed = HttpUtility.ParseQueryString(content);
 
-                // Prepare messages
-                var tasks = new List<Task<MessageResource>>();
+            string? from = parsed["From"];
+            string? messageBody = parsed["Body"];
+            string fromNumber = from.Replace("whatsapp:", "");
 
-                foreach (var contact in contacts)
-                {
+            //var formData = await req.ReadFormAsync();
+            //string fromNumber = formData["From"];
+            // string messageBody = formData["Body"]?.ToLower().Trim();
 
-
-
-                    tasks.Add(MessageResource.CreateAsync(
-                        contentSid: getConsentcontentSid,
-                        from: new Twilio.Types.PhoneNumber($"whatsapp:{twilioNumber}"),
-                        to: new Twilio.Types.PhoneNumber($"whatsapp:{contact.Phone}")
-
-                    ));
-                }
-
-
-
-                await Task.WhenAll(tasks);
-                _logger.LogInformation("WhatsApp messages sent successfully!");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
-            }
-
-
-
-            /***/
             var user = await _dbContext.CustomerContacts.FirstOrDefaultAsync(u => u.Phone == fromNumber);
 
             if (user == null)
@@ -230,13 +200,72 @@ namespace EduKidsFunctionApp
                 user = new CustomerContact { Phone = fromNumber, RegistrationStep = 1 };
                 _dbContext.CustomerContacts.Add(user);
                 await _dbContext.SaveChangesAsync();
-                return TwilioResponse("Welcome to EduKids! What's your child's name?");
+                return TwilioResponse(fromNumber,"Welcome to EduKids! What's your child's name?");
             }
 
             return await HandleUserResponse(user, messageBody);
-        }
 
-        private async Task<IActionResult> HandleUserResponse(CustomerContact user, string message)
+        }
+        /*
+
+            try
+            {
+
+
+                _logger.LogInformation("WhatsApp message received");
+
+                var content = await new StreamReader(req.Body).ReadToEndAsync();
+
+                var parsed = HttpUtility.ParseQueryString(content);
+
+                string? fromNumber = parsed["From"];
+                string? messageBody = parsed["Body"];
+                
+              //  _logger.LogInformation($"Raw body: {body}");
+
+                _logger.LogInformation("WhatsApp message received2");
+
+                _logger.LogInformation($"From: {fromNumber}, Message: {messageBody}");
+
+
+
+                var user = await _dbContext.CustomerContacts.FirstOrDefaultAsync(u => u.Phone == fromNumber.Replace("whatsapp:+", "") );
+
+                if (user == null)
+                {
+                    _logger.LogInformation("WhatsApp message received6");
+
+                    user = new CustomerContact { Phone = fromNumber, RegistrationStep = 1 };
+                    _dbContext.CustomerContacts.Add(user);
+                    await _dbContext.SaveChangesAsync();
+                    return TwilioResponse("Welcome to EduKids! What's your child's name?");
+                }
+                else
+                {
+                    return await HandleUserResponse(user, messageBody);
+
+                }
+
+
+                //  return new OkResult();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing WhatsApp message");
+                _logger.LogError(ex.ToString()); // Logs full stack trace
+
+                return new StatusCodeResult(500);
+            }
+
+
+
+            
+ 
+
+            
+        }
+        */
+        private async Task<string> HandleUserResponse(CustomerContact user, string message)
         {
             string reply = "test";
 
@@ -249,7 +278,8 @@ namespace EduKidsFunctionApp
                     break;
 
                 case 2:
-                    //  user.DateOfBirth = message;
+                    
+                    user.DateOfBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-5));
                     user.RegistrationStep = 3;
                     reply = "Got it! What's your name as the parent?";
                     break;
@@ -257,6 +287,12 @@ namespace EduKidsFunctionApp
                 case 3:
                     user.FatherName = message;
                     user.RegistrationStep = 4;
+                    reply = "Great! Whats your email id for communication?";
+                    break;
+
+                case 4:
+                    user.Email = message;
+                    user.RegistrationStep = 5;
                     user.Subscribed = true;
                     reply = "Thanks! You're now subscribed to EduKids daily learning messages.";
                     break;
@@ -267,19 +303,35 @@ namespace EduKidsFunctionApp
             }
 
             await _dbContext.SaveChangesAsync();
-            return TwilioResponse(reply);
+            return TwilioResponse(user.Phone, reply);
         }
 
-        private static IActionResult TwilioResponse(string message)
+        private string TwilioResponse(string phone,string message)
         {
-            var messagingResponse = new MessagingResponse();
-            messagingResponse.Message(message);
-            return new ContentResult
-            {
-                Content = messagingResponse.ToString(),
-                ContentType = "application/xml",
-                StatusCode = 200
-            };
+            /*
+                        var messages =MessageResource.CreateAsync(
+                                                   //contentSid: getConsentcontentSid,
+                                                   body: message,
+
+                                   from: new Twilio.Types.PhoneNumber($"whatsapp:{twilioNumber}"),
+                                   to: new Twilio.Types.PhoneNumber($"whatsapp:{phone}")
+
+                               );
+                        */
+
+
+
+            return message;
+            
+            /*
+             return new ContentResult
+             {
+                 Content = messagingResponse.ToString(),
+                 ContentType = "application/xml",
+                 StatusCode = 200
+             };
+            */
+
         }
 
     }

@@ -15,7 +15,16 @@ var host = new HostBuilder()
         string connectionString = Environment.GetEnvironmentVariable("SqlConnectionString:EduDb");
 
         services.AddDbContext<AppDbContext>(options =>
-            options.UseSqlServer(connectionString));
+            options.UseSqlServer(connectionString, sqlOptions =>
+            {
+                sqlOptions.EnableRetryOnFailure(
+                    maxRetryCount: 5,                        // Number of retries
+                    maxRetryDelay: TimeSpan.FromSeconds(10), // Delay between retries
+                    errorNumbersToAdd: null);                // Specific SQL error numbers (optional)
+            }));
+
+     //   services.AddDbContext<AppDbContext>(options =>
+     //       options.UseSqlServer(connectionString));
     })
     .Build();
 

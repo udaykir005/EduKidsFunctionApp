@@ -11,11 +11,15 @@ using Twilio;
 using Twilio.Rest.Api.V2010.Account;
 using System.Collections.Generic;
 using Microsoft.Azure.WebJobs;
+using Microsoft.Azure.WebJobs.Host;
 using Twilio.TwiML;
 using Microsoft.Azure.Functions.Worker.Http;
 using System.Net;
 using System.Web;
 using Twilio.TwiML.Messaging;
+using System.Net.Mail;
+
+
 //using Twilio.TwiML.Voice;
 
 namespace EduKidsFunctionApp
@@ -39,10 +43,36 @@ namespace EduKidsFunctionApp
 
 
         }
+     //   public void Run([TimerTrigger("0 */15 * * * *")] TimerInfo myTimer, ILogger log)
 
+        [Function("KeepWarms")]
+        public async Task<String> KeepWarms([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 * * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
+   //     [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+        {
+            _logger.LogInformation($"Warming function at: {DateTime.Now}");
+
+            try
+            {
+
+
+                // Fetch phone numbers from DB
+                var contacts = await _dbContext.CustomerContacts
+                                                .Where(c => c.Subscribed == true)
+                                               .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
+                return "Fail";
+
+            }
+
+            return "Success";
+        }
         [Function("EduKidsMainFunction")]
-        public async Task<String> Run(
-        [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+        public async Task<String> Run([Microsoft.Azure.Functions.Worker.TimerTrigger("* 0 8 * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
+
+        //public async Task<String> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
             _logger.LogInformation($"Function triggered at: {DateTime.UtcNow}");
             string jsonContentVariables="Success2";
@@ -54,7 +84,6 @@ namespace EduKidsFunctionApp
                 var contacts = await _dbContext.CustomerContacts
                                                 .Where(c => c.Subscribed == true)
                                                .ToListAsync();
-                //return contacts.Count.ToString();
                 // Fetch 3 random words from DB
                 var words = await _dbContext.WordsBanks
                     .OrderBy(r => Guid.NewGuid())  // Random order
@@ -113,6 +142,7 @@ namespace EduKidsFunctionApp
                
                 
                 await Task.WhenAll(tasks);
+                await _dbContext.Database.ExecuteSqlRawAsync("UPDATE Master.customerContacts SET RegistrationStep = 5 WHERE Subscribed = 1");
                 _logger.LogInformation("WhatsApp messages sent successfully!");
             }
             catch (Exception ex)
@@ -139,7 +169,7 @@ namespace EduKidsFunctionApp
                 var contacts = await _dbContext.CustomerContacts
                                               //  .Where(c => c.ContactId == 1)
                                                .ToListAsync();
-                //return contacts.Count.ToString();
+
                
 
         
@@ -189,10 +219,6 @@ namespace EduKidsFunctionApp
             string? messageBody = parsed["Body"];
             string fromNumber = from.Replace("whatsapp:", "");
 
-            //var formData = await req.ReadFormAsync();
-            //string fromNumber = formData["From"];
-            // string messageBody = formData["Body"]?.ToLower().Trim();
-
             var user = await _dbContext.CustomerContacts.FirstOrDefaultAsync(u => u.Phone == fromNumber);
 
             if (user == null)
@@ -200,138 +226,97 @@ namespace EduKidsFunctionApp
                 user = new CustomerContact { Phone = fromNumber, RegistrationStep = 1 };
                 _dbContext.CustomerContacts.Add(user);
                 await _dbContext.SaveChangesAsync();
-                return TwilioResponse(fromNumber,"Welcome to EduKids! What's your child's name?");
+                return TwilioResponse("Welcome to EduKids! What's your child's name?");
             }
 
             return await HandleUserResponse(user, messageBody);
 
         }
-        /*
 
-            try
-            {
-
-
-                _logger.LogInformation("WhatsApp message received");
-
-                var content = await new StreamReader(req.Body).ReadToEndAsync();
-
-                var parsed = HttpUtility.ParseQueryString(content);
-
-                string? fromNumber = parsed["From"];
-                string? messageBody = parsed["Body"];
-                
-              //  _logger.LogInformation($"Raw body: {body}");
-
-                _logger.LogInformation("WhatsApp message received2");
-
-                _logger.LogInformation($"From: {fromNumber}, Message: {messageBody}");
-
-
-
-                var user = await _dbContext.CustomerContacts.FirstOrDefaultAsync(u => u.Phone == fromNumber.Replace("whatsapp:+", "") );
-
-                if (user == null)
-                {
-                    _logger.LogInformation("WhatsApp message received6");
-
-                    user = new CustomerContact { Phone = fromNumber, RegistrationStep = 1 };
-                    _dbContext.CustomerContacts.Add(user);
-                    await _dbContext.SaveChangesAsync();
-                    return TwilioResponse("Welcome to EduKids! What's your child's name?");
-                }
-                else
-                {
-                    return await HandleUserResponse(user, messageBody);
-
-                }
-
-
-                //  return new OkResult();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error processing WhatsApp message");
-                _logger.LogError(ex.ToString()); // Logs full stack trace
-
-                return new StatusCodeResult(500);
-            }
-
-
-
-            
- 
-
-            
-        }
-        */
         private async Task<string> HandleUserResponse(CustomerContact user, string message)
         {
             string reply = "test";
-
-            switch (user.RegistrationStep)
+            if (message.ToLower() == "stop")
             {
-                case 1:
-                    user.UserName = message;
-                    user.RegistrationStep = 2;
-                    reply = "Great! How old is your child?";
-                    break;
-
-                case 2:
-                    
-                    user.DateOfBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-5));
-                    user.RegistrationStep = 3;
-                    reply = "Got it! What's your name as the parent?";
-                    break;
-
-                case 3:
-                    user.FatherName = message;
-                    user.RegistrationStep = 4;
-                    reply = "Great! Whats your email id for communication?";
-                    break;
-
-                case 4:
-                    user.Email = message;
-                    user.RegistrationStep = 5;
-                    user.Subscribed = true;
-                    reply = "Thanks! You're now subscribed to EduKids daily learning messages.";
-                    break;
-
-                default:
-                    reply = "You're already subscribed! Stay tuned for daily words.";
-                    break;
+                user.Subscribed = false;
+                reply = "You have been unsubscribed from EduKids. Reply 'start' to resubscribe.";
             }
+            else if (message.ToLower() == "start" && user.Subscribed == false)
+            {
+                user.Subscribed = true;
+                reply = "Welcome back to Edukids!";
+            }
+            else
+            {
+                switch (user.RegistrationStep)
+                {
+                    case 1:
+                        user.UserName = message;
+                        user.RegistrationStep = 2;
+                        reply = "Great! How old is your child in years?";
+                        break;
 
+                    case 2:
+                        if(int.TryParse(message, out _) == false) //check if the message is a number
+                        {
+                            reply = "Please enter a valid age in years. Ex: 9";
+                            break;
+                        }
+                        int age = int.Parse(message);
+                        user.DateOfBirth = DateOnly.FromDateTime(DateTime.Today.AddYears(-age));
+                        user.RegistrationStep = 3;
+                        reply = "Got it! What's your name as the parent?";
+                        break;
+
+                    case 3:
+                        user.FatherName = message;
+                        user.RegistrationStep = 4;
+                        reply = "Great! Whats your email id for communication?";
+                        break;
+
+                    case 4:
+                        if (!IsValidEmail(message))
+                        {
+                            reply = "Please enter a valid email address!";
+                            break;
+                        }
+                        user.Email = message;
+                        user.RegistrationStep = 5;
+                        user.Subscribed = true;
+                        reply = "Thanks! You're now subscribed to EduKids daily learning messages. Send STOP to stop receiving words!";
+                        break;
+
+                    case 5:
+                        user.RegistrationStep =  6;
+                        reply = "Thank you for response!";
+                        break;
+
+                    default:
+                        reply = "You're already subscribed! Stay tuned for daily words.";
+                        break;
+                }
+            }
             await _dbContext.SaveChangesAsync();
-            return TwilioResponse(user.Phone, reply);
+            return TwilioResponse( reply);
         }
 
-        private string TwilioResponse(string phone,string message)
+        private string TwilioResponse(string message)
         {
-            /*
-                        var messages =MessageResource.CreateAsync(
-                                                   //contentSid: getConsentcontentSid,
-                                                   body: message,
-
-                                   from: new Twilio.Types.PhoneNumber($"whatsapp:{twilioNumber}"),
-                                   to: new Twilio.Types.PhoneNumber($"whatsapp:{phone}")
-
-                               );
-                        */
-
-
-
             return message;
             
-            /*
-             return new ContentResult
-             {
-                 Content = messagingResponse.ToString(),
-                 ContentType = "application/xml",
-                 StatusCode = 200
-             };
-            */
+        }
 
+        static bool IsValidEmail(string email)
+        {
+            try
+            {
+                var mailAddress = new MailAddress(email);  // Try to create a MailAddress object
+                return true;  // If it succeeds, the email is valid
+            }
+            catch (FormatException)
+            {
+                return false;  // If it throws a FormatException, the email is not valid
+            }
         }
 
     }

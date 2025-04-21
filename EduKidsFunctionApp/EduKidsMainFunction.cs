@@ -46,7 +46,7 @@ namespace EduKidsFunctionApp
      //   public void Run([TimerTrigger("0 */15 * * * *")] TimerInfo myTimer, ILogger log)
 
         [Function("KeepWarms")]
-        public async Task<String> KeepWarms([Microsoft.Azure.Functions.Worker.TimerTrigger("0 */15 * * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
+        public async Task<String> KeepWarms([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 * * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
    //     [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
             _logger.LogInformation($"Warming function at: {DateTime.Now}");
@@ -296,15 +296,23 @@ namespace EduKidsFunctionApp
                         user.RegistrationStep = 7;
                         user.States = message;
                         user.Subscribed = true;
-                        reply = "Thanks! You're now subscribed to EduKids daily learning messages. Send STOP to stop receiving words!";
+                        reply = "Thanks! You're now subscribed to EduKids daily learning messages. Please feel free to send any suggestions here. Send STOP to stop receiving words!";
                         break;
 
+                    /*
                     case 7:
                         user.RegistrationStep = 8;
-                        reply = "Thank you for response!";
+                        reply = "Thank you for Message!";
                         break;
+                    */
                     default:
-                        reply = "You're already subscribed! Stay tuned for daily words.";
+                        var newMessage = new CustomerMessage
+                        {
+                            Phone = user.Phone,
+                            Message = message
+                        };
+                        _dbContext.CustomerMessages.Add(newMessage);
+                        reply = "Thank you for Message!";
                         break;
                 }
             }

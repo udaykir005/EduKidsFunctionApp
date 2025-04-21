@@ -17,6 +17,8 @@ public partial class AppDbContext : DbContext
 
     public virtual DbSet<CustomerContact> CustomerContacts { get; set; }
 
+    public virtual DbSet<CustomerMessage> CustomerMessages { get; set; }
+
     public virtual DbSet<WordsBank> WordsBanks { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -48,6 +50,21 @@ public partial class AppDbContext : DbContext
                 .IsUnicode(false);
             entity.Property(e => e.Subscribed).HasColumnName("subscribed");
             entity.Property(e => e.UserName).HasMaxLength(100);
+        });
+
+        modelBuilder.Entity<CustomerMessage>(entity =>
+        {
+            entity.HasKey(e => e.MessageId).HasName("PK__customer__C87C0C9C43A34DF7");
+
+            entity.ToTable("customerMessages", "Master");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(getdate())")
+                .HasColumnType("datetime");
+            entity.Property(e => e.Message)
+                .HasMaxLength(255)
+                .IsUnicode(false);
+            entity.Property(e => e.Phone).HasMaxLength(15);
         });
 
         modelBuilder.Entity<WordsBank>(entity =>

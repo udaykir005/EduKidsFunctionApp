@@ -24,4 +24,8 @@ public partial class CustomerContact
     public int RegistrationStep { get; set; }
 
     public bool Subscribed { get; set; }
+
+    public string? City { get; set; }
+
+    public string? States { get; set; }
 }

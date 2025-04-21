@@ -46,7 +46,7 @@ namespace EduKidsFunctionApp
      //   public void Run([TimerTrigger("0 */15 * * * *")] TimerInfo myTimer, ILogger log)
 
         [Function("KeepWarms")]
-        public async Task<String> KeepWarms([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 * * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
+        public async Task<String> KeepWarms([Microsoft.Azure.Functions.Worker.TimerTrigger("0 */15 * * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
    //     [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
             _logger.LogInformation($"Warming function at: {DateTime.Now}");
@@ -66,11 +66,12 @@ namespace EduKidsFunctionApp
                 return "Fail";
 
             }
+            _logger.LogInformation($"Warming Success ");
 
             return "Success";
         }
         [Function("EduKidsMainFunction")]
-        public async Task<String> Run([Microsoft.Azure.Functions.Worker.TimerTrigger("* 0 8 * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
+        public async Task<String> Run([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 2 * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
 
         //public async Task<String> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
@@ -142,7 +143,7 @@ namespace EduKidsFunctionApp
                
                 
                 await Task.WhenAll(tasks);
-                await _dbContext.Database.ExecuteSqlRawAsync("UPDATE Master.customerContacts SET RegistrationStep = 5 WHERE Subscribed = 1");
+                await _dbContext.Database.ExecuteSqlRawAsync("UPDATE Master.customerContacts SET RegistrationStep = 7 WHERE Subscribed = 1");
                 _logger.LogInformation("WhatsApp messages sent successfully!");
             }
             catch (Exception ex)
@@ -282,15 +283,26 @@ namespace EduKidsFunctionApp
                         }
                         user.Email = message;
                         user.RegistrationStep = 5;
-                        user.Subscribed = true;
-                        reply = "Thanks! You're now subscribed to EduKids daily learning messages. Send STOP to stop receiving words!";
+                        reply = "Which city you are from?";
                         break;
 
                     case 5:
                         user.RegistrationStep =  6;
-                        reply = "Thank you for response!";
+                        user.City = message;
+                        reply = "Which state you are from?";
                         break;
 
+                    case 6:
+                        user.RegistrationStep = 7;
+                        user.States = message;
+                        user.Subscribed = true;
+                        reply = "Thanks! You're now subscribed to EduKids daily learning messages. Send STOP to stop receiving words!";
+                        break;
+
+                    case 7:
+                        user.RegistrationStep = 8;
+                        reply = "Thank you for response!";
+                        break;
                     default:
                         reply = "You're already subscribed! Stay tuned for daily words.";
                         break;

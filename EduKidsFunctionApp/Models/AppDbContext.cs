@@ -33,6 +33,9 @@ public partial class AppDbContext : DbContext
 
             entity.HasIndex(e => e.Email, "UQ__customer__A9D10534DAAD4D2C").IsUnique();
 
+            entity.Property(e => e.City)
+                .HasMaxLength(255)
+                .IsUnicode(false);
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
                 .HasColumnType("datetime");
@@ -40,6 +43,9 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.FatherName).HasMaxLength(100);
             entity.Property(e => e.MotherName).HasMaxLength(100);
             entity.Property(e => e.Phone).HasMaxLength(15);
+            entity.Property(e => e.States)
+                .HasMaxLength(255)
+                .IsUnicode(false);
             entity.Property(e => e.Subscribed).HasColumnName("subscribed");
             entity.Property(e => e.UserName).HasMaxLength(100);
         });

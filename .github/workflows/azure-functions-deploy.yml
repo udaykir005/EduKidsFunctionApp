@@ -9,15 +9,14 @@ on:
 jobs:
   build:  # The job that contains all the steps for the deployment
     runs-on: ubuntu-latest  # Use the latest Ubuntu runner for the job
-
-   steps:
+    steps:
     - name: Checkout code
       uses: actions/checkout@v2
 
     - name: Setup .NET SDK
       uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: '6.x'  # Replace with your actual .NET version (e.g., '7.x' or '8.x')
+        dotnet-version: '8.x'  # Replace with your actual .NET version (e.g., '7.x' or '8.x')
 
     - name: Restore dependencies
       run: dotnet restore

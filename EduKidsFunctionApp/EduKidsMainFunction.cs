@@ -34,6 +34,7 @@ namespace EduKidsFunctionApp
         string? twilioNumber = Environment.GetEnvironmentVariable("TwilioWhatsAppNumber");
         string? contentSid = Environment.GetEnvironmentVariable("TwilioContentSid_edukids_words_q1");
         string? getConsentcontentSid = Environment.GetEnvironmentVariable("TwilioContentSid_getconsent");
+        string? CompanyName = Environment.GetEnvironmentVariable("CompanyName");
 
         public EduKidsMainFunction(ILogger<EduKidsMainFunction> logger, AppDbContext dbContext)
         {
@@ -76,7 +77,37 @@ namespace EduKidsFunctionApp
         //public async Task<String> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
             _logger.LogInformation($"Function triggered at: {DateTime.UtcNow}");
+
+            /*executing above query two times to bring cold db to warm stage so that connection wont fail*/
             string jsonContentVariables="Success2";
+            try
+            {
+
+
+                // Fetch phone numbers from DB
+                var contacts = await _dbContext.CustomerContacts
+                                                .Where(c => c.Subscribed == true)
+                                               .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
+            }
+
+            try
+            {
+
+
+                // Fetch phone numbers from DB --test
+                var contacts = await _dbContext.CustomerContacts
+                                                .Where(c => c.Subscribed == true)
+                                               .ToListAsync();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
+            }
+
             try
             {
 
@@ -227,7 +258,7 @@ namespace EduKidsFunctionApp
                 user = new CustomerContact { Phone = fromNumber, RegistrationStep = 1 };
                 _dbContext.CustomerContacts.Add(user);
                 await _dbContext.SaveChangesAsync();
-                return TwilioResponse("Welcome to EduKids, bite sized english learning program! To enroll, Please enter your learner/child's name?");
+                return TwilioResponse($"Welcome to {CompanyName}, bite sized english learning program! To enroll, Please enter your learner/child's name?");
             }
 
             return await HandleUserResponse(user, messageBody);
@@ -240,12 +271,12 @@ namespace EduKidsFunctionApp
             if (message.ToLower() == "stop")
             {
                 user.Subscribed = false;
-                reply = "You have been unsubscribed from EduKids. Reply 'start' to resubscribe.";
+                reply = $"You have been unsubscribed from {CompanyName}. Reply 'start' to resubscribe.";
             }
             else if (message.ToLower() == "start" && user.Subscribed == false)
             {
                 user.Subscribed = true;
-                reply = "Welcome back to Edukids!";
+                reply = $"Welcome back to {CompanyName}!";
             }
             else
             {
@@ -296,7 +327,7 @@ namespace EduKidsFunctionApp
                         user.RegistrationStep = 7;
                         user.States = message;
                         user.Subscribed = true;
-                        reply = "Thanks! You're now subscribed to EduKids daily learning messages. Please feel free to send any suggestions here. Send STOP to stop receiving words!";
+                        reply = $"Thanks! You're now subscribed to {CompanyName} daily learning messages. Please feel free to send any suggestions here. Send STOP to stop receiving words!";
                         break;
 
                     /*

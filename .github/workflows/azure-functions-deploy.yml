@@ -4,7 +4,7 @@ name: Deploy to Azure Function App  # Name of the workflow
 on:
   push:
     branches:
-      - main  # This means the workflow will run when you push to the 'main' branch.
+      - master  # This means the workflow will run when you push to the 'main' branch.
 
 jobs:
   build:  # The job that contains all the steps for the deployment

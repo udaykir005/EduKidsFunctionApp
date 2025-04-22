@@ -10,24 +10,26 @@ jobs:
   build:  # The job that contains all the steps for the deployment
     runs-on: ubuntu-latest  # Use the latest Ubuntu runner for the job
 
-    steps:
-    - name: Checkout code  # Step to checkout the code from GitHub repository
+   steps:
+    - name: Checkout code
       uses: actions/checkout@v2
 
-    - name: Set up .NET Core
+    - name: Setup .NET SDK
       uses: actions/setup-dotnet@v2
       with:
-        dotnet-version: '8.0'  # Replace with your desired .NET version
+        dotnet-version: '6.x'  # Replace with your actual .NET version (e.g., '7.x' or '8.x')
 
     - name: Restore dependencies
-      run: dotnet restore  # Restore dependencies for the .NET app
+      run: dotnet restore
 
-    - name: Build the project  # Build your project if necessary
-      run: |
-        npm run build  # Replace with your build command if necessary
+    - name: Build project
+      run: dotnet build --configuration Release
 
-    - name: Deploy to Azure Function App  # Step to deploy the function app to Azure
-      uses: azure/functions-action@v1  # GitHub action for deploying Azure Functions
+    - name: Publish project
+      run: dotnet publish --configuration Release --output ./publish
+
+    - name: Deploy to Azure Function App
+      uses: azure/functions-action@v1
       with:
         app-name: <your-function-app-name>  # Replace with the name of your Azure Function App
         publish-profile: ${{ secrets.AZURE_FUNCTION_APP_PUBLISH_PROFILE }}  # Use publish profile from GitHub secrets

@@ -14,14 +14,13 @@ jobs:
     - name: Checkout code  # Step to checkout the code from GitHub repository
       uses: actions/checkout@v2
 
-    - name: Setup Node.js (if you're using Node.js in your function app)
-      uses: actions/setup-node@v2
+    - name: Set up .NET Core
+      uses: actions/setup-dotnet@v2
       with:
-        node-version: '14'  # The version of Node.js your Azure Function uses (change this if needed)
+        dotnet-version: '8.0'  # Replace with your desired .NET version
 
-    - name: Install dependencies  # Install any dependencies (if using Node.js)
-      run: |
-        npm install  # or pip install -r requirements.txt for Python apps
+    - name: Restore dependencies
+      run: dotnet restore  # Restore dependencies for the .NET app
 
     - name: Build the project  # Build your project if necessary
       run: |

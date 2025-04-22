@@ -98,7 +98,7 @@ namespace EduKidsFunctionApp
             {
 
 
-                // Fetch phone numbers from DB --test
+                // Fetch phone numbers from DB --test gg
                 var contacts = await _dbContext.CustomerContacts
                                                 .Where(c => c.Subscribed == true)
                                                .ToListAsync();

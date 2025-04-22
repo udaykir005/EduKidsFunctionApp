@@ -1,0 +1,40 @@
+name: Deploy to Azure Function App  # Name of the workflow
+
+# Trigger the workflow when a push happens to the specified branch (e.g., main)
+on:
+  push:
+    branches:
+      - main  # This means the workflow will run when you push to the 'main' branch.
+
+jobs:
+  build:  # The job that contains all the steps for the deployment
+    runs-on: ubuntu-latest  # Use the latest Ubuntu runner for the job
+
+    steps:
+    - name: Checkout code  # Step to checkout the code from GitHub repository
+      uses: actions/checkout@v2
+
+    - name: Setup Node.js (if you're using Node.js in your function app)
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'  # The version of Node.js your Azure Function uses (change this if needed)
+
+    - name: Install dependencies  # Install any dependencies (if using Node.js)
+      run: |
+        npm install  # or pip install -r requirements.txt for Python apps
+
+    - name: Build the project  # Build your project if necessary
+      run: |
+        npm run build  # Replace with your build command if necessary
+
+    - name: Deploy to Azure Function App  # Step to deploy the function app to Azure
+      uses: azure/functions-action@v1  # GitHub action for deploying Azure Functions
+      with:
+        app-name: <your-function-app-name>  # Replace with the name of your Azure Function App
+        publish-profile: ${{ secrets.AZURE_FUNCTION_APP_PUBLISH_PROFILE }}  # Use publish profile from GitHub secrets
+        package: .  # Path to your function app's code (or build output)
+      env:
+        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}

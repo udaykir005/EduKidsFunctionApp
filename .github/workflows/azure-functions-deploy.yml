@@ -37,7 +37,7 @@ jobs:
       with:
         app-name: edukidsFunctionApp  # Replace with the name of your Azure Function App
         publish-profile: ${{ secrets.AZURE_FUNCTION_APP_PUBLISH_PROFILE }}  # Use publish profile from GitHub secrets
-        package: .  # Path to your function app's code (or build output)
+        package: ./publish  # Path to your function app's code (or build output)
       env:
         AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
         AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}

@@ -18,7 +18,7 @@ var host = new HostBuilder()
             options.UseSqlServer(connectionString, sqlOptions =>
             {
                 sqlOptions.EnableRetryOnFailure(
-                    maxRetryCount: 5,                        // Number of retries
+                    maxRetryCount: 5,                        // Number of retries dd
                     maxRetryDelay: TimeSpan.FromSeconds(10), // Delay between retries
                     errorNumbersToAdd: null);                // Specific SQL error numbers (optional)
             }));

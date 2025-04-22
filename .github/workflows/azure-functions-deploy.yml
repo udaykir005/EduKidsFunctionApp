@@ -25,7 +25,7 @@ jobs:
       run: dotnet build --configuration Release
 
     - name: Publish project
-      run: dotnet publish EduKidsFunctionApp/EduKidsFunctionApp.csproj --configuration Release --output ./publish      
+      run: dotnet publish EduKidsFunctionApp/EduKidsFunctionApp.csproj --configuration Debug --output ./publish      
       
     - name: Azure Login
       uses: azure/login@v1

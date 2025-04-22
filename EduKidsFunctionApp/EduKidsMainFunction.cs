@@ -46,7 +46,7 @@ namespace EduKidsFunctionApp
      //   public void Run([TimerTrigger("0 */15 * * * *")] TimerInfo myTimer, ILogger log)
 
         [Function("KeepWarms")]
-        public async Task<String> KeepWarms([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 * * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
+        public async Task<String> KeepWarms([Microsoft.Azure.Functions.Worker.TimerTrigger("0 */15 * * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
    //     [HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
             _logger.LogInformation($"Warming function at: {DateTime.Now}");
@@ -227,7 +227,7 @@ namespace EduKidsFunctionApp
                 user = new CustomerContact { Phone = fromNumber, RegistrationStep = 1 };
                 _dbContext.CustomerContacts.Add(user);
                 await _dbContext.SaveChangesAsync();
-                return TwilioResponse("Welcome to EduKids! What's your child's name?");
+                return TwilioResponse("Welcome to EduKids, bite sized english learning program! To enroll, Please enter your learner/child's name?");
             }
 
             return await HandleUserResponse(user, messageBody);

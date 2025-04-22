@@ -11,26 +11,26 @@ jobs:
     runs-on: ubuntu-latest  # Use the latest Ubuntu runner for the job
     steps:
     - name: Checkout code
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
-    - name: Setup .NET SDK
-      uses: actions/setup-dotnet@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
       with:
-        dotnet-version: '8.x'  # Replace with your actual .NET version (e.g., '7.x' or '8.x')
+        dotnet-version: '8.0.x'
 
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build project
-      run: dotnet build --configuration Release
-
-    - name: Publish project
-      run: dotnet publish EduKidsFunctionApp/EduKidsFunctionApp.csproj --configuration Release --output ./publish      
-      
-    - name: Azure Login
+    - name: Login to Azure
       uses: azure/login@v1
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+    - name: Restore
+      run: dotnet restore ./EduKidsFunctionApp/EduKidsFunctionApp.csproj
+
+    - name: Build
+      run: dotnet build ./EduKidsFunctionApp/EduKidsFunctionApp.csproj --configuration Release
+
+    - name: Publish
+      run: dotnet publish ./EduKidsFunctionApp/EduKidsFunctionApp.csproj --configuration Release --output ./publish
 
     - name: Deploy to Azure Function App
       uses: azure/functions-action@v1

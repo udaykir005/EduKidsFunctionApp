@@ -330,7 +330,7 @@ namespace EduKidsFunctionApp
                         reply = $"Thanks! You're now subscribed to {CompanyName} daily learning messages. Please feel free to send any suggestions here. Send STOP to stop receiving words!";
                         break;
 
-                    /*
+                    /* gts
                     case 7:
                         user.RegistrationStep = 8;
                         reply = "Thank you for Message!";

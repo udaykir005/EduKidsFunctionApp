@@ -35,7 +35,9 @@ namespace EduKidsFunctionApp
         string? contentSid = Environment.GetEnvironmentVariable("TwilioContentSid_edukids_words_q1");
         string? getConsentcontentSid = Environment.GetEnvironmentVariable("TwilioContentSid_getconsent");
         string? CompanyName = Environment.GetEnvironmentVariable("CompanyName");
+        string? AdminPhone = Environment.GetEnvironmentVariable("AdminPhone");
 
+        
         public EduKidsMainFunction(ILogger<EduKidsMainFunction> logger, AppDbContext dbContext)
         {
             _logger = logger;
@@ -278,6 +280,12 @@ namespace EduKidsFunctionApp
                 user.Subscribed = true;
                 reply = $"Welcome back to {CompanyName}!";
             }
+            else if (message.ToLower() == "count" && user.Phone == AdminPhone)
+            {
+                int userCount = _dbContext.CustomerContacts.Count();
+
+                reply = $"Contacts Count: {userCount}!";
+            }
             else
             {
                 switch (user.RegistrationStep)
@@ -289,7 +297,7 @@ namespace EduKidsFunctionApp
                         break;
 
                     case 2:
-                        if(int.TryParse(message, out _) == false) //check if the message is a number
+                        if (int.TryParse(message, out _) == false) //check if the message is a number
                         {
                             reply = "Please enter a valid age in years. Ex: 9";
                             break;
@@ -318,7 +326,7 @@ namespace EduKidsFunctionApp
                         break;
 
                     case 5:
-                        user.RegistrationStep =  6;
+                        user.RegistrationStep = 6;
                         user.City = message;
                         reply = "Which state you are from?";
                         break;

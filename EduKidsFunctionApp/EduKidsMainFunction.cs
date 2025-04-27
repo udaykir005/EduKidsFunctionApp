@@ -78,7 +78,7 @@ namespace EduKidsFunctionApp
 
        // public async Task<String> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
-            _logger.LogInformation($"Function triggered at: {DateTime.UtcNow}");
+            _logger.LogInformation($"Function triggered at (UTC): {DateTime.UtcNow}");
 
             /*executing above query two times to bring cold db to warm stage so that connection wont fail*/
             string jsonContentVariables="Success2";
@@ -88,6 +88,7 @@ namespace EduKidsFunctionApp
 
             int day = istNow.Day;
             int hour = istNow.Hour;
+            _logger.LogInformation($"Function triggered at (IST): {istNow}");
 
             bool isOddDay = day % 2 != 0;
             bool executeFunction = false;

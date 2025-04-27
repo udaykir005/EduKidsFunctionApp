@@ -74,114 +74,135 @@ namespace EduKidsFunctionApp
             return "Success";
         }
         [Function("EduKidsMainFunction")]
-        public async Task<String> Run([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 2 * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
+        public async Task<String> Run([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 * * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
 
-        //public async Task<String> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
+       // public async Task<String> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
             _logger.LogInformation($"Function triggered at: {DateTime.UtcNow}");
 
             /*executing above query two times to bring cold db to warm stage so that connection wont fail*/
             string jsonContentVariables="Success2";
-            try
+            // Convert UTC to your timezone, example IST (Indian Standard Time)
+            TimeZoneInfo istZone = TimeZoneInfo.FindSystemTimeZoneById("India Standard Time");
+            DateTime istNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, istZone);
+
+            int day = istNow.Day;
+            int hour = istNow.Hour;
+
+            bool isOddDay = day % 2 != 0;
+            bool executeFunction = false;
+            //here executing function on 10am on even days 9am on odd days. that way two messages will fall within 24 hour window and less cost
+            if ((isOddDay && hour == 9) || (!isOddDay && hour == 10))
             {
+                _logger.LogError($"Executing function!");
 
-
-                // Fetch phone numbers from DB
-                var contacts = await _dbContext.CustomerContacts
-                                                .Where(c => c.Subscribed == true)
-                                               .ToListAsync();
+                executeFunction = true;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
-            }
-
-            try
+            if (executeFunction)
             {
 
 
-                // Fetch phone numbers from DB --test gg
-                var contacts = await _dbContext.CustomerContacts
-                                                .Where(c => c.Subscribed == true)
-                                               .ToListAsync();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
-            }
-
-            try
-            {
-
-
-                // Fetch phone numbers from DB
-                var contacts = await _dbContext.CustomerContacts
-                                                .Where(c => c.Subscribed == true)
-                                               .ToListAsync();
-                // Fetch 3 random words from DB
-                var words = await _dbContext.WordsBanks
-                    .OrderBy(r => Guid.NewGuid())  // Random order
-                    .Take(3)
-                    .ToListAsync();
-
-                if (words.Count < 3)
+                try
                 {
-                    _logger.LogError("Not enough words in the database.");
-                    return "Fail";
+
+
+                    // Fetch phone numbers from DB
+                    var contacts = await _dbContext.CustomerContacts
+                                                    .Where(c => c.Subscribed == true)
+                                                   .ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
                 }
 
-                // Format date
-                var formattedDate = DateTime.UtcNow.ToString("MMM dd, yyyy");
-
-                // Prepare messages
-                var tasks = new List<Task<MessageResource>>();
-
-                foreach (var contact in contacts)
+                try
                 {
 
 
-                    var contentVariables = new 
+                    // Fetch phone numbers from DB --test gg
+                    var contacts = await _dbContext.CustomerContacts
+                                                    .Where(c => c.Subscribed == true)
+                                                   .ToListAsync();
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
+                }
+
+                try
+                {
+
+
+                    // Fetch phone numbers from DB
+                    var contacts = await _dbContext.CustomerContacts
+                                                    .Where(c => c.Subscribed == true)
+                                                   .ToListAsync();
+                    // Fetch 3 random words from DB
+                    var words = await _dbContext.WordsBanks
+                        .OrderBy(r => Guid.NewGuid())  // Random order
+                        .Take(3)
+                        .ToListAsync();
+
+                    if (words.Count < 3)
                     {
-                        _1 = contact.UserName,
-                        _2 = formattedDate,
-                        _3 = $"*{char.ToUpper(words[0].Word[0]) + words[0].Word.Substring(1).ToLower()}*",
-                        _4 = $"  _{words[0].Grammar}_",
+                        _logger.LogError("Not enough words in the database.");
+                        return "Fail";
+                    }
 
-                        _5 = words[0].Meaning,
-                        _6 = words[0].ExampleUsage,
-                        _7 = $"*{char.ToUpper(words[1].Word[0]) + words[1].Word.Substring(1).ToLower()}*",
-                        _8 = $"  _{words[1].Grammar}_",
-                        _9 = words[1].Meaning,
-                        _10 = words[1].ExampleUsage,
+                    // Format date
+                    var formattedDate = DateTime.UtcNow.ToString("MMM dd, yyyy");
 
-                        _11 = $"*{char.ToUpper(words[2].Word[0]) + words[2].Word.Substring(1).ToLower()}*",
-                        _12 = $"  _{words[2].Grammar}_",
-                        _13 = words[2].Meaning,
-                        _14 = words[2].ExampleUsage
+                    // Prepare messages
+                    var tasks = new List<Task<MessageResource>>();
+
+                    foreach (var contact in contacts)
+                    {
 
 
-                    };
-                     jsonContentVariables = System.Text.Json.JsonSerializer.Serialize(contentVariables).Replace("_","");
+                        var contentVariables = new
+                        {
+                            _1 = contact.UserName,
+                            _2 = formattedDate,
+                            _3 = $"*{char.ToUpper(words[0].Word[0]) + words[0].Word.Substring(1).ToLower()}*",
+                            _4 = $"  _{words[0].Grammar}_",
 
-                    _logger.LogInformation($"jsonContentVariables!:{jsonContentVariables}");
+                            _5 = words[0].Meaning,
+                            _6 = words[0].ExampleUsage,
+                            _7 = $"*{char.ToUpper(words[1].Word[0]) + words[1].Word.Substring(1).ToLower()}*",
+                            _8 = $"  _{words[1].Grammar}_",
+                            _9 = words[1].Meaning,
+                            _10 = words[1].ExampleUsage,
 
-                    tasks.Add(MessageResource.CreateAsync(
-                        contentSid: contentSid,
-                        from: new Twilio.Types.PhoneNumber($"whatsapp:{twilioNumber}"),
-                        to: new Twilio.Types.PhoneNumber($"whatsapp:{contact.Phone}"),
-                        contentVariables: jsonContentVariables
-                    ));
+                            _11 = $"*{char.ToUpper(words[2].Word[0]) + words[2].Word.Substring(1).ToLower()}*",
+                            _12 = $"  _{words[2].Grammar}_",
+                            _13 = words[2].Meaning,
+                            _14 = words[2].ExampleUsage
+
+
+                        };
+                        jsonContentVariables = System.Text.Json.JsonSerializer.Serialize(contentVariables).Replace("_", "");
+
+                        _logger.LogInformation($"jsonContentVariables!:{jsonContentVariables}");
+
+                        tasks.Add(MessageResource.CreateAsync(
+                            contentSid: contentSid,
+                            from: new Twilio.Types.PhoneNumber($"whatsapp:{twilioNumber}"),
+                            to: new Twilio.Types.PhoneNumber($"whatsapp:{contact.Phone}"),
+                            contentVariables: jsonContentVariables
+                        ));
+                    }
+
+
+
+                    await Task.WhenAll(tasks);
+                    await _dbContext.Database.ExecuteSqlRawAsync("UPDATE Master.customerContacts SET RegistrationStep = 7 WHERE Subscribed = 1");
+                    _logger.LogInformation("WhatsApp messages sent successfully!");
                 }
-
-               
-                
-                await Task.WhenAll(tasks);
-                await _dbContext.Database.ExecuteSqlRawAsync("UPDATE Master.customerContacts SET RegistrationStep = 7 WHERE Subscribed = 1");
-                _logger.LogInformation("WhatsApp messages sent successfully!");
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
+                catch (Exception ex)
+                {
+                    _logger.LogError($"Error sending WhatsApp messages: {ex.Message}");
+                }
             }
             return jsonContentVariables;
 

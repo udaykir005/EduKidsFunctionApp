@@ -74,7 +74,7 @@ namespace EduKidsFunctionApp
             return "Success";
         }
         [Function("EduKidsMainFunction")]
-        public async Task<String> Run([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 * * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
+        public async Task<String> Run([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 15 * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
 
        // public async Task<String> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
@@ -99,6 +99,7 @@ namespace EduKidsFunctionApp
 
                 executeFunction = true;
             }
+            executeFunction = true;
             if (executeFunction)
             {
 

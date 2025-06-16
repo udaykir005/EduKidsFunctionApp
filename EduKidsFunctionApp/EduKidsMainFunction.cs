@@ -74,7 +74,7 @@ namespace EduKidsFunctionApp
             return "Success";
         }
         [Function("EduKidsMainFunction")]
-        public async Task<String> Run([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 15 * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
+        public async Task<String> Run([Microsoft.Azure.Functions.Worker.TimerTrigger("0 0 0 * * *")] Microsoft.Azure.Functions.Worker.TimerInfo myTimer)
 
        // public async Task<String> Run([HttpTrigger(AuthorizationLevel.Function, "get")] HttpRequest req)
         {
@@ -198,7 +198,7 @@ namespace EduKidsFunctionApp
 
 
                     await Task.WhenAll(tasks);
-                    await _dbContext.Database.ExecuteSqlRawAsync("UPDATE Master.customerContacts SET RegistrationStep = 7 WHERE Subscribed = 1");
+                    await _dbContext.Database.ExecuteSqlRawAsync("UPDATE Edukids.customerContacts SET RegistrationStep = 7 WHERE Subscribed = 1");
                     _logger.LogInformation("WhatsApp messages sent successfully!");
                 }
                 catch (Exception ex)

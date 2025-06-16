@@ -23,7 +23,7 @@ public partial class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-        => optionsBuilder.UseSqlServer("Server=tcp:saisiri.database.windows.net,1433;Database=edukids;User Id=saisiriadmin;Password=Puday!@Kiran");
+        => optionsBuilder.UseSqlServer("Server=tcp:saisiri.database.windows.net,1433;Database=ChenethaDB;User Id=saisiriadmin;Password=Puday!@Kiran");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,7 +31,7 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.ContactId).HasName("PK__customer__5C66259B1E1F9719");
 
-            entity.ToTable("customerContacts", "Master");
+            entity.ToTable("customerContacts", "Edukids");
 
             entity.HasIndex(e => e.Email, "UQ__customer__A9D10534DAAD4D2C").IsUnique();
 
@@ -56,7 +56,7 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.MessageId).HasName("PK__customer__C87C0C9C43A34DF7");
 
-            entity.ToTable("customerMessages", "Master");
+            entity.ToTable("customerMessages", "Edukids");
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -71,7 +71,7 @@ public partial class AppDbContext : DbContext
         {
             entity.HasKey(e => e.WordId).HasName("PK__wordsBan__2C20F066279AC9B4");
 
-            entity.ToTable("wordsBank", "Master");
+            entity.ToTable("wordsBank", "Edukids");
 
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
